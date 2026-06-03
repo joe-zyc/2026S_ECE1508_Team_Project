@@ -1,0 +1,69 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36" version="29.6.4">
+  <diagram name="第 1 页" id="5wAggy_edW1OPnk9RGqR">
+    <mxGraphModel dx="2066" dy="1103" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="LH5UcLAkPp7yUu_Hu6Xa-11" edge="1" parent="1" source="LH5UcLAkPp7yUu_Hu6Xa-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="LH5UcLAkPp7yUu_Hu6Xa-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LH5UcLAkPp7yUu_Hu6Xa-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;direction=south;" value="Fine Tuned LLM" vertex="1">
+          <mxGeometry height="75" width="155" x="250" y="505" as="geometry" />
+        </mxCell>
+        <mxCell id="LH5UcLAkPp7yUu_Hu6Xa-2" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" value="User&lt;div&gt;&lt;br&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="62.5" width="30" x="50" y="517.5" as="geometry" />
+        </mxCell>
+        <mxCell id="LH5UcLAkPp7yUu_Hu6Xa-5" edge="1" parent="1" source="LH5UcLAkPp7yUu_Hu6Xa-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.594;entryY=0.988;entryDx=0;entryDy=0;entryPerimeter=0;" target="LH5UcLAkPp7yUu_Hu6Xa-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LH5UcLAkPp7yUu_Hu6Xa-6" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Can you recommend me a TV under $500" vertex="1">
+          <mxGeometry height="57.5" width="130" x="100" y="490" as="geometry" />
+        </mxCell>
+        <mxCell id="LH5UcLAkPp7yUu_Hu6Xa-20" edge="1" parent="1" source="LH5UcLAkPp7yUu_Hu6Xa-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="LH5UcLAkPp7yUu_Hu6Xa-19">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LH5UcLAkPp7yUu_Hu6Xa-7" parent="1" style="rounded=0;whiteSpace=wrap;html=1;direction=south;" value="Product Database" vertex="1">
+          <mxGeometry height="75" width="155" x="930" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="LH5UcLAkPp7yUu_Hu6Xa-21" edge="1" parent="1" source="LH5UcLAkPp7yUu_Hu6Xa-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="LH5UcLAkPp7yUu_Hu6Xa-19">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LH5UcLAkPp7yUu_Hu6Xa-8" parent="1" style="whiteSpace=wrap;html=1;" value="Product Description Vector Context" vertex="1">
+          <mxGeometry height="70" width="160" x="930" y="572.5" as="geometry" />
+        </mxCell>
+        <mxCell id="LH5UcLAkPp7yUu_Hu6Xa-17" edge="1" parent="1" source="LH5UcLAkPp7yUu_Hu6Xa-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="LH5UcLAkPp7yUu_Hu6Xa-16">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LH5UcLAkPp7yUu_Hu6Xa-9" parent="1" style="rounded=0;whiteSpace=wrap;html=1;direction=south;" value="Json Object With Query Information" vertex="1">
+          <mxGeometry height="75" width="155" x="490" y="505" as="geometry" />
+        </mxCell>
+        <mxCell id="LH5UcLAkPp7yUu_Hu6Xa-14" edge="1" parent="1" source="LH5UcLAkPp7yUu_Hu6Xa-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="LH5UcLAkPp7yUu_Hu6Xa-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LH5UcLAkPp7yUu_Hu6Xa-12" parent="1" style="rounded=0;whiteSpace=wrap;html=1;direction=south;" value="Query Generator" vertex="1">
+          <mxGeometry height="75" width="155" x="700" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="LH5UcLAkPp7yUu_Hu6Xa-13" edge="1" parent="1" source="LH5UcLAkPp7yUu_Hu6Xa-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.627;entryY=1.002;entryDx=0;entryDy=0;entryPerimeter=0;" target="LH5UcLAkPp7yUu_Hu6Xa-12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LH5UcLAkPp7yUu_Hu6Xa-18" edge="1" parent="1" source="LH5UcLAkPp7yUu_Hu6Xa-16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="LH5UcLAkPp7yUu_Hu6Xa-8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="LH5UcLAkPp7yUu_Hu6Xa-16" parent="1" style="rounded=0;whiteSpace=wrap;html=1;direction=south;" value="Context Generator" vertex="1">
+          <mxGeometry height="75" width="155" x="700" y="570" as="geometry" />
+        </mxCell>
+        <mxCell id="LH5UcLAkPp7yUu_Hu6Xa-22" edge="1" parent="1" source="LH5UcLAkPp7yUu_Hu6Xa-19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1420" y="535" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="LH5UcLAkPp7yUu_Hu6Xa-19" parent="1" style="whiteSpace=wrap;html=1;" value="Recommendation Generator" vertex="1">
+          <mxGeometry height="60" width="120" x="1200" y="505" as="geometry" />
+        </mxCell>
+        <mxCell id="LH5UcLAkPp7yUu_Hu6Xa-23" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" value="User&lt;div&gt;&lt;br&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="62.5" width="30" x="1430" y="511.25" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
