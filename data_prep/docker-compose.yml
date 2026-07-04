@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: amazon-products-postgres
+    environment:
+      POSTGRES_DB: amazon_products
+      POSTGRES_USER: amazon_user
+      POSTGRES_PASSWORD: amazon_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U amazon_user -d amazon_products"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
