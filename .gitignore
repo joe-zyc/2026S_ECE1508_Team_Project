@@ -1,0 +1,11 @@
+.env
+.venv/
+.ipynb_checkpoints/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+backups/*.dump
+backups/*.dump.gz
+.amazon_products_with_main_category.csv
+asset/data/*
+fine_tune/jz/outputs/*
