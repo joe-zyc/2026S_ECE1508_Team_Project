@@ -1,0 +1,36 @@
+services:
+  backend:
+    build:
+      context: ../..
+      dockerfile: product_search/backend/Dockerfile
+    image: ece1508-product-search-backend:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Use BACKEND_DATABASE_URL to override this without changing the local
+      # DATABASE_URL used when running Python directly on the host.
+      DATABASE_URL: ${BACKEND_DATABASE_URL:-postgresql://amazon_user:amazon_password@host.docker.internal:5432/amazon_products}
+      HF_HOME: /home/appuser/.cache/huggingface
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - huggingface_cache:/home/appuser/.cache/huggingface
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)",
+        ]
+      interval: 30s
+      timeout: 10s
+      start_period: 180s
+      retries: 3
+    init: true
+
+volumes:
+  huggingface_cache:

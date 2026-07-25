@@ -1,0 +1,17 @@
+.git
+.gitignore
+.venv
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.ipynb_checkpoints
+**/*.pyc
+**/*.pyo
+**/.env
+**/tests
+**/*.ipynb
+data_prep
+fine_tune
+frontend
+proposal
+product_search/frontend

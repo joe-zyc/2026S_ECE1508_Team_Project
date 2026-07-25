@@ -1,5 +1,5 @@
 import streamlit as st
-from mock_backend import get_recommendations
+from product_search.frontend.mock_backend import get_recommendations
 
 st.set_page_config(page_title="Shopping Assistant", page_icon="🛍️", layout="centered")
 

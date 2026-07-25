@@ -1,0 +1,5 @@
+[tool.pytest.ini_options]
+markers = [
+    "integration: tests requiring an explicitly configured external database",
+]
+testpaths = ["product_search/backend/tests"]
