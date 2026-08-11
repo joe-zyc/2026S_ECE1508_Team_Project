@@ -1,0 +1,1207 @@
+\documentclass{article}
+
+\usepackage[final]{neurips}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{nicefrac}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{array}
+\usepackage{multirow}
+
+% TODO marker
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+
+\title{A Lightweight Fine-Tuned LLM Shopping Assistant with Structured and Semantic Product Retrieval}
+
+\author{%
+  \todo{Member 1 Name}\\
+  Department of Electrical and Computer Engineering\\
+  University of Toronto\\
+  \texttt{\todo{email}} \\
+  \And
+  \todo{Member 2 Name}\\
+  Department of Electrical and Computer Engineering\\
+  University of Toronto\\
+  \texttt{\todo{email}} \\
+  \And
+  \todo{Member 3 Name}\\
+  Department of Electrical and Computer Engineering\\
+  University of Toronto\\
+  \texttt{\todo{email}} \\
+}
+
+\begin{document}
+
+\maketitle
+
+% =========================================================
+\begin{abstract}
+
+This project develops a lightweight large language model (LLM)-based shopping
+assistant for retrieving products from a large Amazon product database.
+Instead of relying entirely on a general-purpose LLM to generate product
+recommendations, we decompose the task into several controlled components:
+structured query extraction, fine-tuned product category classification,
+database filtering, semantic retrieval, and recommendation generation.
+
+A key component of the system is a lightweight approximately one-billion
+parameter language model that maps a product request to one of 16 predefined
+main product categories. We compare three model families: Qwen3.5-0.8B,
+Llama 3.2-1B, and Gemma 3 1B IT. The models are fine-tuned for closed-set
+product category classification using parameter-efficient fine-tuning.
+Gemma 3 1B IT achieved the best observed classification performance with
+93.5\% accuracy and a Macro F1 score of 87.4\%, and was therefore selected
+for integration into the final retrieval pipeline.
+
+The final system combines the fine-tuned classifier with structured SQL
+filters and semantic product embeddings. This architecture improves control
+over product type, price, rating, and other user constraints while keeping
+the computational requirements substantially lower than those required by
+larger language models.
+
+\end{abstract}
+
+
+% =========================================================
+\section*{Statement of Teamwork}
+
+The project was completed collaboratively by three team members.
+
+\begin{itemize}
+    \item \textbf{\todo{Member 1}:}
+    \todo{Describe contribution, e.g., Qwen fine-tuning, evaluation,
+    dataset preprocessing, presentation.}
+
+    \item \textbf{\todo{Member 2}:}
+    \todo{Describe contribution, e.g., Llama fine-tuning, vector database,
+    retrieval system, integration.}
+
+    \item \textbf{\todo{Member 3}:}
+    Implemented and evaluated the Gemma 3 1B IT fine-tuning pipeline,
+    performed LoRA-based supervised fine-tuning for product main-category
+    classification, evaluated zero-shot/prompt-based and fine-tuned
+    performance, and integrated category prediction with the structured
+    product search pipeline.
+\end{itemize}
+
+
+% =========================================================
+\section{Introduction}
+
+Online shopping platforms contain millions of products, making it difficult
+for users to manually search through all available items. Traditional
+keyword search can filter products using exact terms, but it may not fully
+understand natural-language requests such as:
+
+\begin{quote}
+``I want a reliable wireless gaming mouse under \$50 with good reviews.''
+\end{quote}
+
+Such a request includes multiple types of information: product type,
+price constraints, quality requirements, and semantic preferences.
+A useful shopping assistant must understand these different constraints and
+translate them into an effective product retrieval query.
+
+One possible solution is to directly use a general-purpose LLM such as
+ChatGPT to answer the request. However, this approach introduces several
+limitations. In our exploratory testing, when asking a general-purpose model
+for products such as ``a mouse under \$50,'' some returned recommendations
+could include related accessories such as mouse pads rather than strictly
+matching the requested product type. This behavior is understandable for a
+generative language model because it is optimized to produce semantically
+relevant text rather than perform exact closed-set product classification.
+
+For our application, category precision is important because incorrectly
+identifying a product category can cause the retrieval stage to search an
+incorrect region of the database. Therefore, instead of asking a large
+general-purpose model to perform every step, we use a modular architecture.
+
+The system consists of:
+
+\begin{enumerate}
+    \item Natural-language query understanding;
+    \item Structured attribute extraction;
+    \item Fine-tuned main-category classification;
+    \item SQL filtering;
+    \item Semantic vector retrieval;
+    \item Final recommendation generation.
+\end{enumerate}
+
+The main deep learning problem investigated in this project is whether a
+small language model, approximately one billion parameters in size, can be
+fine-tuned to accurately map product titles or user product requests into a
+fixed taxonomy of 16 product categories.
+
+We compare three lightweight model families:
+
+\begin{itemize}
+    \item Qwen3.5-0.8B;
+    \item Llama 3.2-1B;
+    \item Gemma 3 1B IT.
+\end{itemize}
+
+The goal is not to benchmark every available small language model. Instead,
+these three models were chosen because they represent different widely used
+model families while remaining in a similar parameter range. This allows a
+more meaningful comparison under similar computational constraints.
+
+
+% =========================================================
+\section{Preliminaries and Problem Formulation}
+
+\subsection{Dataset}
+
+The project uses an Amazon product dataset containing approximately
+1.43 million product records.
+
+Each product contains attributes such as:
+
+\begin{itemize}
+    \item ASIN;
+    \item product title;
+    \item product image URL;
+    \item product URL;
+    \item star rating;
+    \item number of reviews;
+    \item price;
+    \item list price;
+    \item original category ID;
+    \item best-seller indicator;
+    \item recently purchased count.
+\end{itemize}
+
+The product dataset was merged with a category mapping dataset containing
+248 original category IDs. All product records were successfully associated
+with a category in the merged dataset.
+
+For the language-model classification task, the original categories were
+mapped into the following 16 higher-level main categories:
+
+\begin{enumerate}
+    \item Arts, Crafts \& Party Supplies
+    \item Automotive
+    \item Baby Products
+    \item Beauty \& Personal Care
+    \item Electronics \& Computers
+    \item Fashion, Shoes \& Luggage
+    \item Gift Cards
+    \item Health \& Household
+    \item Home \& Kitchen
+    \item Industrial \& Scientific
+    \item Pet Supplies
+    \item Smart Home
+    \item Sports \& Outdoors
+    \item Tools \& Home Improvement
+    \item Toys \& Games
+    \item Video Games
+\end{enumerate}
+
+
+\subsection{Problem Formulation}
+
+Let a product title or user request be represented by text input $x$.
+
+The classification task is to predict one category
+
+\[
+\hat{y} = f_{\theta}(x),
+\]
+
+where
+
+\[
+\hat{y} \in \mathcal{C},
+\]
+
+and $\mathcal{C}$ is the predefined set of 16 main categories.
+
+Unlike open-ended text generation, this is a closed-set, single-label,
+multiclass classification problem.
+
+A prediction is considered correct only when
+
+\[
+\hat{y} = y,
+\]
+
+where $y$ is the ground-truth category from the dataset taxonomy.
+
+This distinction is important because a general-purpose model may generate a
+semantically reasonable but non-matching category. For example,
+
+\begin{quote}
+Ground truth: \texttt{Electronics \& Computers}
+
+Model output: \texttt{Computer Accessories}
+\end{quote}
+
+Although the output may be semantically related, it does not belong to the
+predefined label set and therefore cannot directly be used for deterministic
+database filtering.
+
+
+\subsection{Prompt Engineering versus Fine-Tuning}
+
+Before fine-tuning, prompt engineering was used to improve the behavior of
+the base models.
+
+Instead of asking the model to freely classify a product, the prompt
+explicitly included all 16 valid labels and instructed the model to return
+exactly one category from the provided list.
+
+For example:
+
+\begin{quote}
+``Classify the following product into exactly one of these 16 categories.
+Only return the category name.''
+\end{quote}
+
+This significantly reduces unconstrained category generation. However,
+prompt engineering alone does not modify the model parameters.
+
+Therefore, it can specify the desired output format but does not explicitly
+teach the model the dataset-specific boundaries between categories.
+
+For example, the model may know that a gaming mouse is related to
+``computer accessories,'' while the project taxonomy specifically requires
+the label ``Electronics \& Computers.''
+
+Fine-tuning addresses this issue by repeatedly exposing the model to
+training examples of the form
+
+\[
+\text{Product Title} \rightarrow
+\text{Predefined Main Category}.
+\]
+
+The model therefore learns both the output format and the specific category
+mapping used by our dataset.
+
+
+% =========================================================
+\section{Design}
+
+\subsection{Overall System Architecture}
+
+The proposed shopping assistant follows the pipeline:
+
+\begin{center}
+\fbox{
+\begin{minipage}{0.92\linewidth}
+\centering
+User Query
+$\rightarrow$
+Structured Query Extraction
+$\rightarrow$
+Fine-Tuned Category Classifier
+$\rightarrow$
+SQL Filtering
+$\rightarrow$
+Semantic Vector Retrieval
+$\rightarrow$
+Recommendation Generation
+\end{minipage}}
+\end{center}
+
+A user may provide a query such as:
+
+\begin{quote}
+``I want a wireless gaming mouse under \$50 with at least four stars.''
+\end{quote}
+
+The structured query extraction component identifies constraints such as:
+
+\begin{itemize}
+    \item product description: wireless gaming mouse;
+    \item maximum price: \$50;
+    \item minimum star rating: 4;
+    \item brand: optional;
+    \item minimum review count: optional;
+    \item sorting criterion.
+\end{itemize}
+
+The fine-tuned model independently predicts:
+
+\begin{quote}
+\texttt{Electronics \& Computers}
+\end{quote}
+
+This predicted category is then added as a strict database filter.
+
+The database query therefore combines symbolic constraints with semantic
+information rather than relying only on natural-language generation.
+
+
+\subsection{Structured Database Retrieval}
+
+Structured properties such as price, category, star rating, review count,
+and brand can be represented as SQL filters.
+
+A simplified query may take the form:
+
+\begin{verbatim}
+SELECT *
+FROM amazon_products
+WHERE main_category = 'Electronics & Computers'
+  AND price <= 50
+  AND stars >= 4;
+\end{verbatim}
+
+This prevents the recommendation model from inventing product attributes
+that do not exist in the database.
+
+
+\subsection{Semantic Retrieval}
+
+Exact keyword matching alone may be too restrictive. For example,
+``portable gaming mouse'' and ``wireless lightweight mouse'' may represent
+similar user intent without containing exactly the same keywords.
+
+To improve semantic matching, product-title embeddings are stored in a
+vector representation.
+
+The project uses the embedding model
+
+\begin{quote}
+\texttt{BAAI/bge-base-en-v1.5}
+\end{quote}
+
+with an embedding dimension of 768.
+
+Semantic similarity can then be used to rank candidate products after
+structured filters have removed invalid candidates.
+
+
+% =========================================================
+\section{Methodology}
+
+\subsection{Model Selection}
+
+Three lightweight model families were selected:
+
+\begin{itemize}
+    \item Qwen3.5-0.8B;
+    \item Llama 3.2-1B;
+    \item Gemma 3 1B IT.
+\end{itemize}
+
+The models were selected for three main reasons.
+
+First, all three are approximately within the same small-model parameter
+range, making comparison more meaningful than comparing a 1B model directly
+against a much larger model.
+
+Second, they represent different model families. Comparing different
+families provides more information than comparing several checkpoints from
+the same architecture.
+
+Third, their size allows fine-tuning and inference using the computational
+resources available for this project.
+
+
+\subsection{Why Approximately 1B Parameters?}
+
+The category prediction task is significantly narrower than general
+open-domain language generation.
+
+The model does not need to:
+
+\begin{itemize}
+    \item generate long essays;
+    \item perform complex multi-step reasoning;
+    \item memorize the entire Amazon catalog;
+    \item answer arbitrary world-knowledge questions.
+\end{itemize}
+
+Instead, it must map a short product title or shopping request to one of only
+16 possible output labels.
+
+For such a constrained problem, using a much larger model would substantially
+increase training memory, inference latency, and computational cost without
+necessarily providing a proportional improvement in classification
+performance.
+
+Small models also make local deployment possible and reduce dependence on
+external API calls.
+
+Our hypothesis is therefore that task-specific fine-tuning of a small model
+can provide better cost-performance trade-offs than using an unfine-tuned
+large model for a narrow classification task.
+
+Larger models remain a possible extension and are discussed in
+Section~\ref{sec:discussion}.
+
+
+\subsection{Supervised Fine-Tuning}
+
+Each training example contains a product title and its ground-truth
+main category.
+
+Conceptually, each example follows:
+
+\begin{quote}
+Instruction: Classify the product into one main category.
+
+Input: Product title
+
+Output: One of the 16 predefined category labels.
+\end{quote}
+
+The model is trained using next-token prediction over the supervised
+instruction-response sequence.
+
+
+\subsection{LoRA Fine-Tuning of Gemma 3 1B IT}
+
+Gemma 3 1B IT was fine-tuned using Low-Rank Adaptation (LoRA).
+
+Instead of updating every parameter in the approximately 1B-parameter model,
+LoRA freezes the original model weights and introduces trainable low-rank
+matrices into selected linear projection layers.
+
+For an original weight matrix $W$, LoRA represents the adapted weight as
+
+\[
+W' = W + BA,
+\]
+
+where $A$ and $B$ are low-rank trainable matrices.
+
+The rank $r$ is much smaller than the original matrix dimensions, allowing
+the model to be adapted using significantly fewer trainable parameters.
+
+For the Gemma experiment, the LoRA configuration was:
+
+\begin{table}[h]
+\caption{Gemma 3 1B IT LoRA configuration.}
+\label{tab:gemma-config}
+\centering
+\begin{tabular}{ll}
+\toprule
+Parameter & Value \\
+\midrule
+LoRA rank $r$ & 16 \\
+LoRA alpha & 32 \\
+LoRA dropout & 0.05 \\
+Learning rate & $2\times10^{-4}$ \\
+Training epochs & 1 \\
+Per-device batch size & 4 \\
+Gradient accumulation steps & 4 \\
+Effective batch size & 16 \\
+Maximum sequence length & 512 \\
+Training precision & BF16 \\
+Gradient checkpointing & Disabled \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+LoRA adapters were applied to:
+
+\begin{itemize}
+    \item \texttt{q\_proj};
+    \item \texttt{k\_proj};
+    \item \texttt{v\_proj};
+    \item \texttt{o\_proj};
+    \item \texttt{gate\_proj};
+    \item \texttt{up\_proj};
+    \item \texttt{down\_proj}.
+\end{itemize}
+
+These layers cover both the attention projections and MLP projection layers.
+
+The implementation used the Hugging Face Transformers, PEFT, and TRL
+libraries.
+
+The supervised fine-tuning procedure can be summarized as:
+
+\begin{enumerate}
+    \item Load the pretrained instruction-tuned language model.
+    \item Freeze the original model parameters.
+    \item Insert LoRA adapters into selected projection layers.
+    \item Format product titles and labels as instruction-response pairs.
+    \item Optimize only the LoRA parameters using supervised fine-tuning.
+    \item Save the LoRA adapter weights.
+    \item Load the adapter during inference and generate exactly one category.
+\end{enumerate}
+
+
+\subsection{Training Data}
+
+The complete balanced classification dataset contained approximately
+71,586 examples before the final experimental sampling procedure.
+
+For the reported Gemma training run:
+
+\begin{itemize}
+    \item training examples: 10,000;
+    \item testing examples: 1,000.
+\end{itemize}
+
+\todo{Confirm whether Qwen and Llama used exactly the same 10,000/1,000
+samples. If not, report the exact sample counts for each model here.}
+
+An exact-title leakage check found only four overlapping titles between the
+sampled training and test sets, corresponding to approximately 0.4\% of the
+test titles. This suggests that the measured performance was not primarily
+caused by exact title memorization.
+
+
+% =========================================================
+\section{Numerical Experiments}
+
+\subsection{Experimental Setup}
+
+The main experiment compares the three lightweight language models on the
+same 16-class product classification task.
+
+The primary objective is not merely to measure whether the generated text is
+semantically related to the product. The output must match the predefined
+taxonomy so that it can be directly used by the downstream database query.
+
+The following evaluation metrics are considered:
+
+\begin{itemize}
+    \item Accuracy;
+    \item Macro Precision;
+    \item Macro Recall;
+    \item Macro F1;
+    \item Weighted F1;
+    \item Balanced Accuracy;
+    \item Exact Label Compliance Rate;
+    \item Per-class Precision, Recall, and F1;
+    \item Confusion Matrix.
+\end{itemize}
+
+
+\subsection{Evaluation Metrics}
+
+For $N$ samples, classification accuracy is
+
+\[
+\mathrm{Accuracy}
+=
+\frac{1}{N}
+\sum_{i=1}^{N}
+\mathbb{1}(\hat{y}_i=y_i).
+\]
+
+Accuracy provides an intuitive measure of overall correctness.
+
+However, accuracy alone can hide poor performance on categories with fewer
+examples. Therefore, Precision, Recall, and F1 are also evaluated separately
+for each class.
+
+For class $c$,
+
+\[
+\mathrm{Precision}_c =
+\frac{TP_c}{TP_c + FP_c},
+\]
+
+\[
+\mathrm{Recall}_c =
+\frac{TP_c}{TP_c + FN_c},
+\]
+
+and
+
+\[
+F1_c =
+2
+\frac{
+\mathrm{Precision}_c \cdot \mathrm{Recall}_c
+}{
+\mathrm{Precision}_c + \mathrm{Recall}_c
+}.
+\]
+
+Macro F1 assigns equal importance to every category:
+
+\[
+\mathrm{MacroF1}
+=
+\frac{1}{C}
+\sum_{c=1}^{C}F1_c,
+\]
+
+where $C=16$.
+
+This metric is particularly useful because a model cannot obtain a strong
+Macro F1 score simply by performing well on the most frequent categories.
+
+Weighted F1 is
+
+\[
+\mathrm{WeightedF1}
+=
+\sum_{c=1}^{C}
+\frac{N_c}{N}F1_c.
+\]
+
+It measures overall F1 performance while accounting for the class
+distribution.
+
+Balanced Accuracy is equivalent to averaging class-wise recall for a
+multiclass classification task and is included to evaluate whether smaller
+classes are being ignored.
+
+We additionally define \textbf{Exact Label Compliance Rate}:
+
+\[
+\mathrm{Compliance}
+=
+\frac{
+\#\{\hat{y}_i \in \mathcal{C}\}
+}{
+N
+}.
+\]
+
+This metric is important for an LLM-based classifier because a model can
+generate a semantically plausible category that is not one of the 16 allowed
+labels.
+
+
+\subsection{Prompt Engineering Baseline}
+
+Before fine-tuning, we evaluated a prompt-engineering approach in which the
+model was explicitly shown all 16 valid category names.
+
+The prompt instructed the model to:
+
+\begin{enumerate}
+    \item select exactly one category;
+    \item use only a category from the predefined label list;
+    \item return only the category name without additional explanation.
+\end{enumerate}
+
+This baseline is more appropriate than unconstrained zero-shot generation
+because a completely unconstrained model may invent its own taxonomy.
+
+For Gemma 3 1B IT, the prompt-based zero-shot baseline achieved:
+
+\begin{table}[h]
+\caption{Prompt-based zero-shot baseline for Gemma 3 1B IT.}
+\centering
+\begin{tabular}{lc}
+\toprule
+Metric & Result \\
+\midrule
+Accuracy & 34.0\% \\
+Macro F1 & 13.36\% \\
+Weighted F1 & 31.30\% \\
+Macro Precision & \todo{calculate} \\
+Macro Recall & \todo{calculate} \\
+Balanced Accuracy & \todo{calculate} \\
+Exact Label Compliance & \todo{calculate} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The relatively low performance demonstrates that prompt constraints alone
+are insufficient for learning the project-specific taxonomy.
+
+Prompt engineering can tell the model which outputs are allowed, but it does
+not teach the model the decision boundary between those categories.
+
+
+\subsection{Fine-Tuned Model Comparison}
+
+Table~\ref{tab:model-results} compares the three fine-tuned lightweight
+models.
+
+\begin{table}[h]
+\caption{Fine-tuned model comparison.}
+\label{tab:model-results}
+\centering
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lccccccc}
+\toprule
+Model &
+Accuracy &
+Macro Precision &
+Macro Recall &
+Macro F1 &
+Weighted F1 &
+Balanced Acc. &
+Label Compliance \\
+\midrule
+
+Qwen3.5-0.8B
+& 75.3\%
+& \todo{value}
+& \todo{value}
+& 75.7\%
+& 75.3\%
+& \todo{value}
+& \todo{value}
+\\
+
+Llama 3.2-1B
+& 87.7\%
+& \todo{value}
+& \todo{value}
+& 81.2\%
+& \todo{value}
+& \todo{value}
+& \todo{value}
+\\
+
+Gemma 3 1B IT
+& \textbf{93.5\%}
+& \todo{value}
+& \todo{value}
+& \textbf{87.4\%}
+& \textbf{93.5\%}
+& \todo{value}
+& \todo{value}
+\\
+
+\bottomrule
+\end{tabular}}
+\end{table}
+
+Gemma achieved the best observed overall performance, with 93.5\% accuracy
+and a Macro F1 of approximately 87.4\%.
+
+The difference between Accuracy and Macro F1 indicates that some classes
+remain more difficult than others. Therefore, per-class results were also
+examined rather than relying only on aggregate accuracy.
+
+
+\subsection{Gemma Per-Class Performance}
+
+The fine-tuned Gemma model achieved strong F1 scores for most categories.
+
+Examples include:
+
+\begin{itemize}
+    \item Gift Cards: F1 = 1.00;
+    \item Industrial \& Scientific: F1 = 0.98;
+    \item Pet Supplies: F1 = 0.98;
+    \item Video Games: F1 = 0.98;
+    \item Electronics \& Computers: F1 = 0.96;
+    \item Automotive: F1 = 0.96.
+\end{itemize}
+
+The more difficult categories included:
+
+\begin{itemize}
+    \item Smart Home: F1 = 0.75;
+    \item Sports \& Outdoors: F1 = 0.82;
+    \item Health \& Household: F1 = 0.88.
+\end{itemize}
+
+In particular, Smart Home achieved high precision but substantially lower
+recall, suggesting that the model is conservative when assigning products to
+this category.
+
+\todo{Insert confusion matrix figure generated from the final Gemma test set.}
+
+\begin{figure}[h]
+  \centering
+  \fbox{
+  \rule[-.5cm]{0cm}{5.0cm}
+  \rule[-.5cm]{8.0cm}{0cm}
+  }
+  \caption{Confusion matrix of the fine-tuned Gemma 3 1B IT classifier.
+  Replace this placeholder with the final confusion-matrix image.}
+  \label{fig:confusion}
+\end{figure}
+
+
+\subsection{Training Curves}
+
+\todo{Export final training-loss and validation-loss curves for each model.}
+
+\begin{figure}[h]
+  \centering
+  \fbox{
+  \rule[-.5cm]{0cm}{4.5cm}
+  \rule[-.5cm]{8cm}{0cm}
+  }
+  \caption{Training loss of the fine-tuned models.}
+  \label{fig:training-loss}
+\end{figure}
+
+
+\subsection{Efficiency Comparison}
+
+Classification quality is only one factor in model selection.
+
+Because the system is intended to use a lightweight classifier, model
+efficiency should also be considered.
+
+\begin{table}[h]
+\caption{Model efficiency comparison.}
+\label{tab:efficiency}
+\centering
+\begin{tabular}{lcccc}
+\toprule
+Model &
+Parameters &
+Trainable LoRA Params. &
+Peak VRAM &
+Avg. Inference Time \\
+\midrule
+Qwen3.5-0.8B
+& $\sim$0.8B
+& \todo{value}
+& \todo{GB}
+& \todo{ms/sample} \\
+
+Llama 3.2-1B
+& $\sim$1B
+& \todo{value}
+& \todo{GB}
+& \todo{ms/sample} \\
+
+Gemma 3 1B IT
+& $\sim$1B
+& \todo{value}
+& \todo{GB}
+& \todo{ms/sample} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Additional useful engineering metrics include:
+
+\begin{itemize}
+    \item training time;
+    \item GPU memory usage;
+    \item inference latency;
+    \item throughput in samples per second;
+    \item number and percentage of trainable parameters.
+\end{itemize}
+
+These measurements allow comparison not only in terms of predictive
+performance but also deployment efficiency.
+
+
+\subsection{End-to-End Demo Test}
+
+The final pipeline was also tested using natural-language shopping requests.
+
+For example:
+
+\begin{quote}
+``I want a wireless gaming mouse under \$50.''
+\end{quote}
+
+The structured query component extracts the price and product-description
+constraints, while the fine-tuned Gemma classifier predicts:
+
+\begin{quote}
+\texttt{Electronics \& Computers}
+\end{quote}
+
+The database then retrieves only candidate products satisfying the category
+and structured conditions.
+
+\todo{Insert 2--5 representative demo queries and returned products.}
+
+For each demo query, the report should record:
+
+\begin{itemize}
+    \item original user request;
+    \item structured query;
+    \item predicted main category;
+    \item top retrieved products;
+    \item whether all hard constraints were satisfied.
+\end{itemize}
+
+
+% =========================================================
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{Why Not Use ChatGPT Directly?}
+
+A natural question is why the complete shopping assistant is not implemented
+by directly asking a powerful general-purpose model such as ChatGPT to
+recommend products.
+
+The main reason is that the objectives of a generative chatbot and a
+database retrieval system are different.
+
+A generative model is optimized to generate text that is relevant and useful
+in a broad semantic sense. It is not inherently constrained to return only
+database records satisfying strict application-specific conditions.
+
+In our exploratory tests, asking for a product such as a mouse below a
+specified price could occasionally produce related products or accessories,
+such as mouse pads. Although these results may be semantically related to the
+request, they are incorrect for a strict product retrieval task.
+
+This becomes more important when multiple hard constraints are present:
+
+\begin{itemize}
+    \item product category;
+    \item maximum price;
+    \item minimum rating;
+    \item minimum review count;
+    \item brand;
+    \item availability in the project database.
+\end{itemize}
+
+A database system can guarantee such constraints directly, whereas a
+generative LLM cannot guarantee them through prompting alone.
+
+There are also practical considerations.
+
+Using an external large-model API for every classification and retrieval
+decision introduces:
+
+\begin{itemize}
+    \item API cost;
+    \item network latency;
+    \item dependence on an external service;
+    \item reduced reproducibility;
+    \item less control over future model changes;
+    \item difficulty guaranteeing exact output schemas.
+\end{itemize}
+
+Therefore, our system uses LLMs only where language understanding is useful
+and uses deterministic database operations where strict constraints are
+required.
+
+
+\subsection{Why Fine-Tuning is Necessary}
+
+Prompt engineering improved the behavior of the base models by explicitly
+providing the 16 allowed labels.
+
+However, a prompt mainly specifies \emph{what the model should do}.
+It does not directly teach the model \emph{how our dataset defines each
+category}.
+
+For instance, a general language model may reasonably classify a wireless
+mouse as:
+
+\begin{quote}
+\texttt{Computer Accessories}
+\end{quote}
+
+while the project taxonomy requires:
+
+\begin{quote}
+\texttt{Electronics \& Computers}.
+\end{quote}
+
+The first answer is linguistically reasonable but unusable as a direct
+database category filter.
+
+Fine-tuning repeatedly exposes the model to examples from the actual
+taxonomy and therefore modifies the model behavior toward the application's
+specific decision boundaries.
+
+This difference can be summarized as:
+
+\begin{quote}
+\textbf{Prompt engineering:}
+``Choose one of these 16 labels.''
+
+\medskip
+
+\textbf{Fine-tuning:}
+``Learn what each of these 16 labels means in our dataset.''
+\end{quote}
+
+This is supported by the Gemma experiment, where the constrained
+prompt-based baseline achieved approximately 34.0\% accuracy, while the
+fine-tuned model achieved 93.5\% accuracy.
+
+
+\subsection{Why Use Small Models Instead of Larger LLMs?}
+
+Larger models generally provide greater general-purpose language and
+reasoning capability. However, model size should be matched to the
+complexity of the target task.
+
+Our category classifier has:
+
+\begin{itemize}
+    \item short textual inputs;
+    \item only 16 output classes;
+    \item no requirement for long-form generation;
+    \item no requirement for broad world knowledge;
+    \item no need to memorize product records.
+\end{itemize}
+
+Therefore, much of the capability provided by a much larger model is not
+required.
+
+A smaller approximately 1B-parameter model provides several advantages:
+
+\begin{enumerate}
+    \item \textbf{Lower training cost.}
+    LoRA fine-tuning can be performed using limited GPU resources.
+
+    \item \textbf{Lower inference latency.}
+    A smaller classifier can make category predictions faster.
+
+    \item \textbf{Lower memory requirement.}
+    Small models are easier to deploy locally.
+
+    \item \textbf{Reduced API dependence.}
+    The classifier can run without sending every request to an external
+    large-model API.
+
+    \item \textbf{Task specialization.}
+    Fine-tuning allows a small model to focus its capacity on the narrow
+    classification problem.
+
+    \item \textbf{Fair experimental comparison.}
+    Models from different families can be compared within a similar
+    parameter range.
+\end{enumerate}
+
+The 93.5\% Gemma accuracy suggests that a lightweight model has sufficient
+capacity for this particular classification task.
+
+However, this does not establish that 1B is universally optimal.
+A larger model may improve difficult or ambiguous categories.
+A future experiment could compare 1B, 3B, 4B, and larger models while
+measuring the trade-off between classification quality, latency, memory,
+and training cost.
+
+
+\subsection{Limitations}
+
+Several limitations remain.
+
+First, the classifier depends primarily on product-title information.
+Some products may be difficult to classify without richer descriptions.
+
+Second, some high-level categories have semantic overlap. For example,
+Smart Home products may also appear similar to Electronics \& Computers or
+Home \& Kitchen.
+
+Third, the dataset does not contain sufficient user interaction history for
+a complete collaborative recommendation system. Therefore, the current
+system focuses primarily on query-based retrieval rather than long-term
+personalized recommendation.
+
+Fourth, evaluation of the complete shopping assistant should include
+retrieval quality in addition to category-classification accuracy.
+
+
+\subsection{Future Retrieval Metrics}
+
+For the final retrieval component, future evaluation should use ranking
+metrics such as:
+
+\begin{itemize}
+    \item Recall@$K$;
+    \item Precision@$K$;
+    \item Mean Reciprocal Rank (MRR);
+    \item Normalized Discounted Cumulative Gain (NDCG@$K$);
+    \item hard-constraint satisfaction rate.
+\end{itemize}
+
+These metrics measure whether relevant products appear near the top of the
+retrieved list, which cannot be evaluated using classification accuracy
+alone.
+
+
+% =========================================================
+\section{Conclusions}
+
+This project investigated whether lightweight language models can be
+specialized for product category classification and integrated into a
+database-driven shopping assistant.
+
+Three model families---Qwen3.5-0.8B, Llama 3.2-1B, and Gemma 3 1B IT---were
+fine-tuned and evaluated on a 16-class Amazon product taxonomy.
+
+Among the tested models, Gemma 3 1B IT achieved the best observed
+performance, with 93.5\% classification accuracy, approximately 87.4\%
+Macro F1, and approximately 93.5\% Weighted F1.
+
+The experiments also demonstrate the importance of task-specific
+fine-tuning. Prompt engineering can restrict the expected output format, but
+it does not fully teach a general-purpose model the category boundaries used
+by a specific dataset. Fine-tuning substantially improved the model's
+ability to map product titles to the required closed-set taxonomy.
+
+The broader system design also suggests that an effective shopping assistant
+does not require one large language model to perform every task. Instead,
+different components can be used according to their strengths: language
+models for natural-language understanding, fine-tuned small models for
+controlled classification, SQL for hard constraints, vector embeddings for
+semantic similarity, and a generative model for final user-facing
+explanations.
+
+Future work will evaluate the semantic retrieval component using ranking
+metrics such as Recall@$K$, MRR, and NDCG, investigate richer product
+descriptions, and compare the performance-cost trade-off of larger language
+models.
+
+
+% =========================================================
+\section*{References}
+
+\small
+
+[1] Hu, E. J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y.,
+Wang, S., Wang, L., and Chen, W. (2021).
+LoRA: Low-Rank Adaptation of Large Language Models.
+\textit{arXiv preprint arXiv:2106.09685}.
+
+\medskip
+
+[2] \todo{Add official Gemma 3 technical report/model card reference.}
+
+\medskip
+
+[3] \todo{Add official Llama 3.2 model reference.}
+
+\medskip
+
+[4] \todo{Add official Qwen model/model-card reference matching the exact
+checkpoint used in the project.}
+
+\medskip
+
+[5] \todo{Add BAAI BGE embedding model reference.}
+
+\medskip
+
+[6] \todo{Add Amazon dataset/Kaggle source reference.}
+
+\medskip
+
+[7] \todo{Add Hugging Face Transformers reference.}
+
+\medskip
+
+[8] \todo{Add PEFT/TRL references if required.}
+
+
+% =========================================================
+\section*{Appendix}
+
+\subsection*{A. Final Hyperparameter Configuration}
+
+\todo{Add complete Qwen and Llama hyperparameter tables so that all
+three experiments can be reproduced.}
+
+\subsection*{B. Full Classification Reports}
+
+\todo{Insert the full per-category Precision, Recall, F1, and support
+tables for Qwen, Llama, and Gemma.}
+
+\subsection*{C. Example Queries}
+
+\todo{Add additional end-to-end shopping assistant examples.}
+
+\end{document}
