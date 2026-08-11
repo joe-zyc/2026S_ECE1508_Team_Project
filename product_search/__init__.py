@@ -1,1 +1,0 @@
-"""Product search application package."""
