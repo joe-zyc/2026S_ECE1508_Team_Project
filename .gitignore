@@ -9,3 +9,6 @@ backups/*.dump.gz
 .amazon_products_with_main_category.csv
 asset/data/*
 fine_tune/jz/outputs/*
+report/*
+!report/Report_Template.tex
+!report/neurips.sty

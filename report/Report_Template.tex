@@ -1,7 +1,6 @@
 \documentclass{article}
 
 \usepackage[final]{neurips}
-
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{hyperref}
@@ -50,7 +49,7 @@ assistant for retrieving products from a large Amazon product database.
 Instead of relying entirely on a general-purpose LLM to generate product
 recommendations, we decompose the task into several controlled components:
 structured query extraction, fine-tuned product category classification,
-database filtering, semantic retrieval, and recommendation generation.
+database filtering, RAG context retrieval, and recommendation generation.
 
 A key component of the system is a lightweight approximately one-billion
 parameter language model that maps a product request to one of 16 predefined
@@ -62,7 +61,7 @@ Gemma 3 1B IT achieved the best observed classification performance with
 for integration into the final retrieval pipeline.
 
 The final system combines the fine-tuned classifier with structured SQL
-filters and semantic product embeddings. This architecture improves control
+filters and RAG context retrieval using vector embeddings. This architecture improves control
 over product type, price, rating, and other user constraints while keeping
 the computational requirements substantially lower than those required by
 larger language models.
@@ -80,9 +79,8 @@ The project was completed collaboratively by three team members.
     \todo{Describe contribution, e.g., Qwen fine-tuning, evaluation,
     dataset preprocessing, presentation.}
 
-    \item \textbf{\todo{Member 2}:}
-    \todo{Describe contribution, e.g., Llama fine-tuning, vector database,
-    retrieval system, integration.}
+    \item \textbf{{Yuechen Zhang}:}
+    Prepared baseline models and datasets. Conducted Llama 3.2-1B LoRA fine-tuning experiments, performed model evaluation against zero-shot prompting. Designed and deployed the postgres vector database in cloud environment for semantic search. Developed product recommendation generator to combine structured and semantic search results.
 
     \item \textbf{{Ouyi Yang}:}
     Implemented and evaluated the Gemma 3 1B IT fine-tuning pipeline,
@@ -96,63 +94,20 @@ The project was completed collaboratively by three team members.
 % =========================================================
 \section{Introduction}
 
-Online shopping platforms contain millions of products, making it difficult
-for users to manually search through all available items. Traditional
-keyword search can filter products using exact terms, but it may not fully
-understand natural-language requests such as:
-
-\begin{quote}
-``I want a reliable wireless gaming mouse under \$50 with good reviews.''
-\end{quote}
-
-Such a request includes multiple types of information: product type,
-price constraints, quality requirements, and semantic preferences.
-A useful shopping assistant must understand these different constraints and
-translate them into an effective product retrieval query.
+Online shopping platforms contain millions of products, where product inventory gets updated 
+frequently. In this project, we targeted to build a lightweight shopping assistant that can help users to find products from an inventory database given a natural-language query.
 
 One possible solution is to directly use a general-purpose LLM such as
 ChatGPT to answer the request. However, this approach introduces several
-limitations. In our exploratory testing, when asking a general-purpose model
+limitations. In our exploratory testing indicated in notebook \texttt{product\_search/baselines/baseline\_llm\_query\_generator.ipynb}, when asking a general-purpose model
 for products such as ``a mouse under \$50,'' some returned recommendations
-could include related accessories such as mouse pads rather than strictly
-matching the requested product type. This behavior is understandable for a
-generative language model because it is optimized to produce semantically
-relevant text rather than perform exact closed-set product classification.
+could include related accessories such as mouse pads rather than mouse products as requested.
 
-For our application, category precision is important because incorrectly
-identifying a product category can cause the retrieval stage to search an
-incorrect region of the database. Therefore, instead of asking a large
-general-purpose model to perform every step, we use a modular architecture.
+To address this issue, we propose a hybrid approach that combines a fine-tuned lightweight language model for product category classification, with structured database filtering and RAG context retrieval, so that the final recommendations understands the user request semantically while also satisfying strict constraints.
 
-The system consists of:
-
-\begin{enumerate}
-    \item Natural-language query understanding;
-    \item Structured attribute extraction;
-    \item Fine-tuned main-category classification;
-    \item SQL filtering;
-    \item Semantic vector retrieval;
-    \item Final recommendation generation.
-\end{enumerate}
-
-The main deep learning problem investigated in this project is whether a
-small language model, approximately one billion parameters in size, can be
-fine-tuned to accurately map product titles or user product requests into a
-fixed taxonomy of 16 product categories.
-
-We compare three lightweight model families:
-
-\begin{itemize}
-    \item Qwen3.5-0.8B;
-    \item Llama 3.2-1B;
-    \item Gemma 3 1B IT.
-\end{itemize}
-
-The goal is not to benchmark every available small language model. Instead,
-these three models were chosen because they represent different widely used
-model families while remaining in a similar parameter range. This allows a
-more meaningful comparison under similar computational constraints.
-
+The main generative model problem investigated in this project is whether a
+small language model can be fine-tuned to accurately map user product requests into a
+fixed taxonomy of 16 product categories for downstream database filtering. We compare three model families as potential candidates for fine-tuning a lightweight classifier that has close parameter size, and evaluate their performance by classification accuracy, macro F1, weighted F1, and other metrics. The best-performing model is then integrated into the final shopping assistant pipeline.
 
 % =========================================================
 \section{Preliminaries and Problem Formulation}
