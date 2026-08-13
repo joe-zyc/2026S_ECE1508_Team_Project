@@ -32,10 +32,10 @@
   University of Toronto\\
   \texttt{{joeyuechen.zhang@mail.utoronto.ca}} \\
   \And
-  {Jianhong  Wu}\\
+  {Jinhong  Wu}\\
   Department of Mechanical and Industrial Engineering\\
   University of Toronto\\
-  \texttt{{jianhong.wu@mail.utoronto.ca}} \\
+  \texttt{{jinhong.wu@mail.utoronto.ca}} \\
 }
 
 \begin{document}
@@ -92,7 +92,7 @@ into relevant products from a database containing approximately 1.43 million
 Amazon products.
 
 A general-purpose LLM can understand the request, but it does not guarantee
-strict retrieval constraints. In exploratory tests, a direct LLM query for a
+strict retrieval constraints. In exploratory tests under notebook \texttt{baseline\_llm\_query\_generator.ipynb}, a direct LLM query for a
 mouse under a given price occasionally produced related products such as
 mouse pads. This is acceptable for open-ended generation but undesirable for
 database retrieval, where product type, category, price, and rating should be
@@ -100,17 +100,19 @@ satisfied explicitly.
 
 We therefore decompose the problem into:
 
-\[
-\text{User Query}
-\rightarrow
-\text{Query Parsing}
-\rightarrow
-\text{Category Classification}
-\rightarrow
-\text{Database/Vector Retrieval}
-\rightarrow
-\text{Recommendation}.
-\]
+\begin{center}
+\resizebox{0.95\textwidth}{!}{%
+\textbf{User Query}
+$\rightarrow$
+\textbf{Query Parsing}
+$\rightarrow$
+\textbf{Category Classification}
+$\rightarrow$
+\textbf{Database / Vector Retrieval}
+$\rightarrow$
+\textbf{Recommendation}
+}
+\end{center}
 
 The main deep-learning task is a closed-set multiclass problem. Given an input
 text $x$, the classifier predicts
@@ -149,7 +151,7 @@ similarity rather than exact keyword matching alone.
 This hybrid design combines neural language understanding with deterministic
 database constraints.
 
-\subsection{Why Lightweight Models?}
+\subsection{Model Selection and Motivation}
 
 We compare three model families of similar scale:
 
@@ -169,11 +171,12 @@ Instead, the objective is to determine whether task-specific fine-tuning makes
 a compact model sufficiently accurate for this constrained classification
 task.
 
-\subsection{Prompt Engineering and LoRA Fine-Tuning}
+\subsection{Zero-Shot Prompting vs LoRA Fine-Tuning}
 
-Before fine-tuning, prompt engineering was used to explicitly provide all
-16 allowed category labels and instruct the model to output exactly one of
-them. This reduces invalid outputs, but the model still does not learn the
+To setup the benchmark of LoRA fine-tuning of lightweight models, zero-shot 
+prompting with GPT 5.6 was used to explicitly provide all 16 allowed category labels and 
+instruct the model to output exactly one of
+them. With an overall Accuracy of 0.76 and Macro F1 score of 0.61, the zero-shot approach shows moderate performance on 100 samples, while the model still does not learn the
 dataset-specific boundary between categories.
 
 For example, a base model may classify a gaming mouse as
@@ -307,13 +310,13 @@ Qwen3.5-0.8B
 & 100.0\% \\
 
 Llama 3.2-1B
-& 87.7\%
-& \todo{value}
-& \todo{value}
-& 81.2\%
-& \todo{value}
-& \todo{value}
-& \todo{value} \\
+& 87.5\%
+& 82.8\%
+& 80.2\%
+& 81.1\%
+& 87.4\%
+& 80.2\%
+& 100.0\% \\
 
 Gemma 3 1B IT
 & \textbf{93.5\%}
@@ -496,11 +499,19 @@ LoRA: Low-Rank Adaptation of Large Language Models.
 
 \medskip
 
-[2] \todo{Add official Gemma 3 technical report/model card reference.}
+[2] Asaniczka. (2023).
+Amazon Products Dataset 2023 (1.4M Products).
+\textit{Kaggle Dataset}.
 
 \medskip
 
-[3] \todo{Add official Llama 3.2 model reference.}
+[3] Meta AI. (2024).
+Llama 3.2: Revolutionizing Edge AI and Vision with Open, Customizable Models.
+\textit{Meta AI}.
+
+\medskip
+
+[2] \todo{Add official Gemma 3 technical report/model card reference.}
 
 \medskip
 
@@ -510,10 +521,6 @@ checkpoint used in the project.}
 \medskip
 
 [5] \todo{Add BAAI BGE embedding model reference.}
-
-\medskip
-
-[6] \todo{Add Amazon dataset/Kaggle source reference.}
 
 \medskip
 
