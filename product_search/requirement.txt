@@ -1,0 +1,13 @@
+jupyterlab>=4.2
+ipykernel>=6.29
+numpy>=1.26
+pandas>=2.0
+psycopg[binary]>=3.2.1
+python-dotenv>=1.0.1
+sentence-transformers>=3.0.1
+torch>=2.4
+transformers>=4.51
+peft>=0.14
+accelerate>=1.2
+huggingface-hub>=0.27
+openai>=1.68
