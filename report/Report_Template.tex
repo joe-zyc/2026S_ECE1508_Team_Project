@@ -440,7 +440,7 @@ model provides a generic language representation, while fine-tuning changes
 both the task-specific output behavior and, to a smaller extent, the
 geometry of the latent representation.
 
-The results also explain why a lightweight approximately 1B-parameter model
+The results also explain why a lightweight (~1B-parameter) model
 is practical for this application. Our task has short inputs and only 16
 possible outputs, so the model does not need the broad generation and
 reasoning capacity of a much larger LLM. Gemma 3 1B IT already reaches
@@ -463,14 +463,14 @@ the actual product search.
 \section{Conclusion}
 
 We developed a modular shopping assistant combining natural-language query
-understanding, LoRA-fine-tuned category classification, structured database
+understanding, LoRA fine-tuned category classification, structured database
 filtering, and semantic latent-space retrieval.
 
 The experiments show a clear benefit from task-specific adaptation. For
 Gemma 3 1B IT, prompt-engineered zero-shot classification achieves 34.0\%
 accuracy and 13.36\% Macro F1, while LoRA fine-tuning increases these values
 to 93.5\% and 87.4\%, respectively. Among the three fine-tuned lightweight
-models, Gemma also outperforms Qwen3.5-0.8B and Llama 3.2-1B and is therefore
+models, Gemma also outperforms Qwen3.5-0.8B and Llama 3.2-1B, and is therefore
 used in the final system.
 
 Latent-space analysis provides a more nuanced result. Fine-tuning improves
@@ -511,16 +511,17 @@ Llama 3.2: Revolutionizing Edge AI and Vision with Open, Customizable Models.
 
 \medskip
 
-[2] \todo{Add official Gemma 3 technical report/model card reference.}
+[4]  Qwen Team. (2025).
+Qwen3 Technical Report.
+\textit{arXiv preprint arXiv:2505.09388}.
 
 \medskip
 
-[4] \todo{Add official Qwen model/model-card reference matching the exact
-checkpoint used in the project.}
+[5] \todo{Add official Gemma 3 technical report/model card reference.}
 
 \medskip
 
-[5] \todo{Add BAAI BGE embedding model reference.}
+[6] \todo{Add BAAI BGE embedding model reference.}
 
 \medskip
 
