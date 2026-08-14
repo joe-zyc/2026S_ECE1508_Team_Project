@@ -15,6 +15,14 @@
 \usepackage{graphicx}
 \usepackage{array}
 \usepackage{multirow}
+\usepackage{listings}
+\usepackage[utf8]{inputenc} 
+\lstset{
+  basicstyle=\ttfamily,
+  keepspaces=true,       
+  showstringspaces=false,  
+  extendedchars=true
+}
 
 % TODO marker
 \newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
@@ -491,42 +499,23 @@ for a practical shopping-assistant system.
 
 \small
 
-[1] Asaniczka. (2023).
-Amazon Products Dataset 2023 (1.4M Products).
-\textit{Kaggle Dataset}.
-
+[1] Asaniczka, "Amazon products dataset 2023 (1.4M products)," Kaggle Dataset, 2023.
 \medskip
 
-[2] Xiao, S., Liu, Z., Zhang, P., Muennighoff, N., Lian, D., and Nie, J.-Y.
-(2024).
-\textit{C-Pack: Packed Resources for General Chinese Embeddings}.
-In Proceedings of the 47th International ACM SIGIR Conference on Research
-and Development in Information Retrieval (SIGIR '24).S
-
+[2] S. Xiao, Z. Liu, P. Zhang, N. Muennighoff, D. Lian, and J.-Y. Nie, "C-Pack: Packed resources for general Chinese embeddings," in Proc. 47th Int. ACM SIGIR Conf. Res. Dev. Inf. Retrieval (SIGIR '24), 2024.
 \medskip
 
-[3] Qwen Team. (2025).
-Qwen3 Technical Report.
-\textit{arXiv preprint arXiv:2505.09388}.
-
+[3] Qwen Team, "Qwen3 technical report," arXiv preprint arXiv:2505.09388, 2025.
 \medskip
 
-[4] Meta AI. (2024).
-Llama 3.2: Revolutionizing Edge AI and Vision with Open, Customizable Models.
-\textit{Meta AI}.
-
+[4] Meta AI, "Llama 3.2: Revolutionizing edge AI and vision with open, customizable models," \textit{Meta AI Blog}, Sep. 25, 2024. [Online]. Available: https://ai.meta.com/blog/llama-3-2-connect-2024-vision-edge-mobile-devices/. [Accessed: Oct. 15, 2024].
 \medskip
 
-[5] Gemma Team. (2025).
-\textit{Gemma 3 Technical Report}.
-arXiv preprint arXiv:2503.19786.
-
+[5] Gemma Team, "Gemma 3 technical report," arXiv preprint arXiv:2503.19786, 2025.
 \medskip
 
-[6] Hu, E. J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y.,
-Wang, S., Wang, L., and Chen, W. (2021).
-LoRA: Low-Rank Adaptation of Large Language Models.
-\textit{arXiv preprint arXiv:2106.09685}.
+[6] E. J. Hu et al., "LoRA: Low-rank adaptation of large language models," arXiv preprint arXiv:2106.09685, 2021.
+\medskip
 
 % =========================================================
 \section*{Appendix}
@@ -573,37 +562,15 @@ Max. length & 128 & Precision & BF16 \\
 
 \begin{lstlisting}[language=Python]
 existing_search_output = product_search_pipeline(
-    "I need a birthday present for a soccer fan around $100.", 
-    limit=10
+    "Can u recommend me skin care products for around 100 dollar? 
+    My skin is very sensitive, and I am looking for products that 
+    can keep it hydrated", limit=10,
 )
-existing_recommendations = generate_product_recommendations(existing_search_output, top_x=3)
-display(Markdown(existing_recommendations["message"]))
-\end{lstlisting}
 
-\begin{quote}
-Here are the top 3 results for your request, in the order returned by the search:
-
-\textbf{ROKR 3D Wooden Puzzles Solar System Model Kit for Adults to Build Mechanical Orrery Desk Display Gift for Birthday} (Price: \$84.99 $\cdot$ Rating: 4.6/5 $\cdot$ 0 reviews)
-
-This 3D wooden puzzle solar system model kit is a great birthday gift option around your budget---especially if the soccer fan also enjoys building and desk-display projects. It’s positioned as an adult-build kit, so it may feel like a more personal, hands-on present.
-
-\textbf{Topo Gigio Vinyl Doll 20 cm Special Edition} (Price: \$114.90 $\cdot$ Rating: 4.2/5 $\cdot$ 0 reviews)
-
-If you want a straightforward birthday gift that still fits your $\sim$\$100 budget, this Special Edition Topo Gigio vinyl doll could be a fun pick for a soccer fan who likes collectible characters. Since it’s a specific themed collectible, it may feel more ``giftable'' than a generic item.
-
-\textbf{Penny Skateboards Cactus Wanderlust 22"} (Price: \$99.00 $\cdot$ Rating: 4.6/5 $\cdot$ 0 reviews)
-
-A skateboard is a sporty, outdoorsy birthday present that fits your around-\$100 budget, and it matches the active vibe many soccer fans enjoy. The 22" ``Cactus Wanderlust'' style also gives it a distinctive, gift-worthy look---just double-check any preferences on board size.
-\end{quote}
-
-\subsubsection*{Example 2}
-
-\begin{lstlisting}[language=Python]
-existing_search_output = product_search_pipeline(
-    "Can u recommend me skin care products for around 100 dollar? My skin is very sensitive, and I am looking for products that can keep it hydrated",
-    limit=10,
+existing_recommendations = generate_product_recommendations(
+existing_search_output, top_x=5
 )
-existing_recommendations = generate_product_recommendations(existing_search_output, top_x=5)
+
 display(Markdown(existing_recommendations["message"]))
 \end{lstlisting}
 
@@ -631,14 +598,18 @@ A hydrating serum that’s described as providing short- and long-term moisturiz
 A moisturizing creme made for dry and sensitive skin, with a gentle-sounding moisture focus that may help you maintain hydration within your $\sim$\$100 budget---just double-check how it fits your routine.
 \end{quote}
 
-\subsubsection*{Example 3}
+\subsubsection*{Example 2}
 
 \begin{lstlisting}[language=Python]
 existing_search_output = product_search_pipeline(
-    "What keyboard would you recommend for a new gamer to buy for a budget under 50 dollars",
-    limit=10,
+    "What keyboard would you recommend for a new gamer to buy for 
+    a budget under 50 dollars", limit=10,
 )
-existing_recommendations = generate_product_recommendations(existing_search_output, top_x=5)
+
+existing_recommendations = generate_product_recommendations(
+existing_search_output, top_x=5
+)
+
 display(Markdown(existing_recommendations["message"]))
 \end{lstlisting}
 
