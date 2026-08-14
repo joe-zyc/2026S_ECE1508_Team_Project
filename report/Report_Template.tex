@@ -528,4 +528,142 @@ Wang, S., Wang, L., and Chen, W. (2021).
 LoRA: Low-Rank Adaptation of Large Language Models.
 \textit{arXiv preprint arXiv:2106.09685}.
 
+% =========================================================
+\section*{Appendix}
+
+\subsection*{A. Qwen and Gemma LoRA Training Configuration}
+
+\begin{table}[h]
+\centering
+\caption{Qwen LoRA training configuration.}
+\label{tab:lora}
+\small
+\begin{tabular}{lc@{\qquad}lc}
+\toprule
+Parameter & Value & Parameter & Value \\
+\midrule
+Rank $r$ & 16 & LoRA alpha & 32 \\
+Dropout & 0.05 & Learning rate & $2\times10^{-4}$ \\
+Epochs & 1 & Effective batch size & 16 \\
+Max. length & 512 & Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Gemma LoRA training configuration.}
+\label{tab:lora}
+\small
+\begin{tabular}{lc@{\qquad}lc}
+\toprule
+Parameter & Value & Parameter & Value \\
+\midrule
+Rank $r$ & 10 & LoRA alpha & 20 \\
+Dropout & 0.05 & Learning rate & $2\times10^{-4}$ \\
+Epochs & 1 & Effective batch size & 32 \\
+Max. length & 128 & Precision & BF16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{B. Examples of Shopping Assistant Outputs}
+
+\subsubsection*{Example 1}
+
+\begin{lstlisting}[language=Python]
+existing_search_output = product_search_pipeline(
+    "I need a birthday present for a soccer fan around $100.", 
+    limit=10
+)
+existing_recommendations = generate_product_recommendations(existing_search_output, top_x=3)
+display(Markdown(existing_recommendations["message"]))
+\end{lstlisting}
+
+\begin{quote}
+Here are the top 3 results for your request, in the order returned by the search:
+
+\textbf{ROKR 3D Wooden Puzzles Solar System Model Kit for Adults to Build Mechanical Orrery Desk Display Gift for Birthday} (Price: \$84.99 $\cdot$ Rating: 4.6/5 $\cdot$ 0 reviews)
+
+This 3D wooden puzzle solar system model kit is a great birthday gift option around your budget---especially if the soccer fan also enjoys building and desk-display projects. It’s positioned as an adult-build kit, so it may feel like a more personal, hands-on present.
+
+\textbf{Topo Gigio Vinyl Doll 20 cm Special Edition} (Price: \$114.90 $\cdot$ Rating: 4.2/5 $\cdot$ 0 reviews)
+
+If you want a straightforward birthday gift that still fits your $\sim$\$100 budget, this Special Edition Topo Gigio vinyl doll could be a fun pick for a soccer fan who likes collectible characters. Since it’s a specific themed collectible, it may feel more ``giftable'' than a generic item.
+
+\textbf{Penny Skateboards Cactus Wanderlust 22"} (Price: \$99.00 $\cdot$ Rating: 4.6/5 $\cdot$ 0 reviews)
+
+A skateboard is a sporty, outdoorsy birthday present that fits your around-\$100 budget, and it matches the active vibe many soccer fans enjoy. The 22" ``Cactus Wanderlust'' style also gives it a distinctive, gift-worthy look---just double-check any preferences on board size.
+\end{quote}
+
+\subsubsection*{Example 2}
+
+\begin{lstlisting}[language=Python]
+existing_search_output = product_search_pipeline(
+    "Can u recommend me skin care products for around 100 dollar? My skin is very sensitive, and I am looking for products that can keep it hydrated",
+    limit=10,
+)
+existing_recommendations = generate_product_recommendations(existing_search_output, top_x=5)
+display(Markdown(existing_recommendations["message"]))
+\end{lstlisting}
+
+\begin{quote}
+Here are the top 5 results for your request, in the order returned by the search:
+
+\textbf{Hydro-Drops Face Serum Formulated with Vitamin B3 and Hibiscus Oil, Hypoallergenic and Dermatologist Tested--Anti-Aging Hydrating Moisture Serum Suitable for all Skin Types, 1-FL Oz. Pack-of-1} (Price: \$105.00 $\cdot$ Rating: 4.6/5 $\cdot$ 0 reviews)
+
+A hypoallergenic, dermatologist-tested hydrating face serum that targets moisture with Vitamin B3 and hibiscus oil---nice if you have very sensitive skin and want help keeping it hydrated.
+
+\textbf{Hydra-Cool Serum, Refreshing and Hydrating Skin Face Serum, Anti-Blemish, Anti-Redness} (Price: \$96.00 $\cdot$ Rating: 4.6/5 $\cdot$ 0 reviews)
+
+This refreshing, hydrating face serum is specifically positioned for anti-redness and anti-blemish needs, which can be helpful for sensitive skin while you’re aiming for better hydration.
+
+\textbf{Anti-Aging Daily Skincare System with Youth Activating Serum} (Price: \$89.00 $\cdot$ Rating: 4.2/5 $\cdot$ 0 reviews)
+
+An anti-aging daily skincare system with a youth-activating serum option that stays within your budget---worth a look if you want hydration support as part of an everyday routine.
+
+\textbf{Revision Skincare Hydrating Serum, with hyaluronic acid and fruit extracts, provides short and long term moisturization, reduce fine lines and wrinkles, keeps skin hydrated, oil free moisture, 1 Fl oz} (Price: \$100.00 $\cdot$ Rating: 4.6/5 $\cdot$ 0 reviews)
+
+A hydrating serum that’s described as providing short- and long-term moisturization and keeping skin hydrated, and it’s noted as oil-free moisture---good for sensitive skin looking for hydration without heaviness.
+
+\textbf{Vitamin E Creme Swiss Collagen Complex Moisturizing Creme for Dry and Sensitive Skin 16 oz} (Price: \$98.00 $\cdot$ Rating: 4.6/5 $\cdot$ 0 reviews)
+
+A moisturizing creme made for dry and sensitive skin, with a gentle-sounding moisture focus that may help you maintain hydration within your $\sim$\$100 budget---just double-check how it fits your routine.
+\end{quote}
+
+\subsubsection*{Example 3}
+
+\begin{lstlisting}[language=Python]
+existing_search_output = product_search_pipeline(
+    "What keyboard would you recommend for a new gamer to buy for a budget under 50 dollars",
+    limit=10,
+)
+existing_recommendations = generate_product_recommendations(existing_search_output, top_x=5)
+display(Markdown(existing_recommendations["message"]))
+\end{lstlisting}
+
+\begin{quote}
+Here are the top 5 results for your request, in the order returned by the search:
+
+\textbf{One Hand RGB Gaming Keyboard, USB Wired Rainbow Letters Glow Single Hand Keyboard with Wrist Rest Support Multimedia Keys, Backlit Ergonomic Mechanical Feeling Keyboard for Game} (Price: \$17.99 $\cdot$ Rating: 4.3/5 $\cdot$ 3,290 reviews)
+
+This one-hand wired RGB keyboard is a budget-friendly option under \$50 for a new gamer, and the included wrist rest support and multimedia keys can help make gaming basics more comfortable.
+
+\textbf{Gaming Keyboard for Girl, 60 Percent Keyboard Color Cute Keyboard with RGB, Wired Mechanical Keyboard for Gaming Office Apricot} (Price: \$26.22 $\cdot$ Rating: 4.2/5 $\cdot$ 0 reviews)
+
+If you want something under \$50 with a cute, gamer-style look, this 60\% wired RGB keyboard is an affordable choice---just double-check the key layout and specs since it’s aimed at ``for girl'' buyers in the title.
+
+\textbf{One Hand RGB Gaming Keyboard and Backlit Mouse Combo, USB Wired Rainbow Letters Glow Single Hand Mechanical Feeling Keyboard with Wrist Rest Support, Gaming Keyboard Set for Game} (Price: \$23.99 $\cdot$ Rating: 4.3/5 $\cdot$ 3,290 reviews)
+
+For a simple starter setup on a budget, this single-hand keyboard bundled with a backlit mouse keeps you under \$50 and adds wrist rest support for more comfortable sessions.
+
+\textbf{HORI EDGE 201 Mechanical Gaming Keyboard (EGU-201)} (Price: \$19.95 $\cdot$ Rating: 3.9/5 $\cdot$ 0 reviews)
+
+The HORI EDGE 201 mechanical gaming keyboard is a low-cost pick under \$50 with a well-known gaming brand; it’s a good way to get a dedicated mech-style option---verify details like layout and switch type on the listing.
+
+\textbf{75\% Mechanical Gaming Keyboard with Red Switch, RGB Backlit Keyboard, 87 Keys Compact TKL Wired Computer Keyboard for Laptop PC Gamer Xbox PS (Grey/ 87 Red Switch)} (Price: \$34.99 $\cdot$ Rating: 4.6/5 $\cdot$ 0 reviews)
+
+With a 75\% compact size, red switch, and RGB backlighting for under \$50, this is a strong option for a new gamer who wants a more space-saving board---just confirm it matches your preferred key layout before buying.
+\end{quote}
+
 \end{document}
